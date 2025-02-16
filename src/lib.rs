@@ -869,19 +869,60 @@ mod punishment_number {
 */
 
 impl Solution {
-    fn find_place(left: &mut BinaryHeap<i32>, s: &mut Vec<i32>) -> () {
-        let first_empty = s
-            .iter()
-            .enumerate()
-            .find(|(_, &i)| i == 0)
-            .map(|(index, _)| index);
+    // left - sorted descending
+    // s -
+    fn find_place(left: &Vec<i32>, s: &Vec<i32>) -> Option<Vec<i32>> {
+        // println!("{:?} {:?}", left, s);
+
+        if left.len() == 0 {
+            return Some(s.clone());
+        }
+
+        for (place, num) in s.iter().enumerate() {
+            if *num != 0 {
+                continue;
+            }
+
+            for (index, n) in left.iter().enumerate() {
+                let other_place = place + TryInto::<usize>::try_into(*n).unwrap();
+                let new_left = [&left[..index], &left[index + 1..]].concat();
+
+                if *n > 1 {
+                    if let Some(0) = s.get(other_place) {
+                        let mut new_s = s.clone();
+                        new_s[place] = *n;
+                        new_s[other_place] = *n;
+
+                        let result = Self::find_place(&new_left, &new_s);
+
+                        if result.is_some() {
+                            return result;
+                        }
+                    }
+                } else {
+                    let mut new_s = s.clone();
+                    new_s[place] = *n;
+
+                    let result = Self::find_place(&new_left, &new_s);
+
+                    if result.is_some() {
+                        return result;
+                    }
+                }
+            }
+        }
+
+        return None;
     }
 
     pub fn construct_distanced_sequence(n: i32) -> Vec<i32> {
-        let n: usize = n.try_into().unwrap();
-        let sequence = vec![0u32; n * 2 + 1];
+        let sequence = vec![0i32; 2usize * TryInto::<usize>::try_into(n).unwrap() - 1];
+        let left: Vec<i32> = (1..=n).rev().collect();
 
-        return vec![];
+        match Self::find_place(&left, &sequence) {
+            None => vec![],
+            Some(r) => r,
+        }
     }
 }
 
@@ -899,5 +940,14 @@ mod construct_distanced_sequence {
     fn case_2() {
         let result = Solution::construct_distanced_sequence(5);
         assert_eq!(result, vec![5, 3, 1, 4, 3, 5, 2, 4, 2]);
+    }
+
+    #[test]
+    fn case_3() {
+        let result = Solution::construct_distanced_sequence(13);
+        assert_eq!(
+            result,
+            vec![13, 11, 12, 8, 6, 4, 9, 10, 1, 4, 6, 8, 11, 13, 12, 9, 7, 10, 3, 5, 2, 3, 2, 7, 5]
+        );
     }
 }
