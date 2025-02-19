@@ -98,7 +98,7 @@ mod tests_are_almost_equal {
 /**
  * https://leetcode.com/problems/tuple-with-same-product/
  */
-use std::collections::{BTreeMap, BTreeSet, BinaryHeap, HashMap};
+use std::collections::{BTreeMap, BTreeSet, BinaryHeap, HashMap, HashSet};
 
 impl Solution {
     pub fn product_pairs_count(nums: &Vec<i32>) -> BTreeMap<i32, i32> {
@@ -949,5 +949,170 @@ mod construct_distanced_sequence {
             result,
             vec![13, 11, 12, 8, 6, 4, 9, 10, 1, 4, 6, 8, 11, 13, 12, 9, 7, 10, 3, 5, 2, 3, 2, 7, 5]
         );
+    }
+}
+
+/**
+ * https://leetcode.com/problems/construct-smallest-number-from-di-string/
+ */
+impl Solution {
+    fn backtracking(
+        pattern: &Vec<char>,
+        p: &mut Vec<usize>,
+        used: &mut HashSet<usize>,
+        i: usize,
+    ) -> bool {
+        if i == p.len() {
+            return true;
+        }
+
+        if i == 0 {
+            for j in 1..=9usize {
+                used.insert(j);
+                p[i] = j;
+
+                if Self::backtracking(pattern, p, used, i + 1) {
+                    return true;
+                }
+
+                used.remove(&j);
+            }
+        } else {
+            let c = pattern[i - 1];
+            for j in 1..=9usize {
+                if used.contains(&j) {
+                    continue;
+                }
+
+                match c {
+                    'D' => {
+                        if j >= p[i - 1] {
+                            continue;
+                        }
+                    }
+                    'I' => {
+                        if j <= p[i - 1] {
+                            continue;
+                        }
+                    }
+                    _ => {}
+                }
+
+                used.insert(j);
+                p[i] = j;
+
+                if Self::backtracking(pattern, p, used, i + 1) {
+                    return true;
+                }
+
+                used.remove(&j);
+            }
+        }
+
+        return false;
+    }
+
+    pub fn smallest_number(pattern: String) -> String {
+        let pattern: Vec<char> = pattern.chars().collect();
+        let mut p: Vec<usize> = vec![0; pattern.len() + 1];
+        let mut used: HashSet<usize> = HashSet::new();
+
+        let _posible = Self::backtracking(&pattern, &mut p, &mut used, 0);
+
+        return p.iter().map(|v| v.to_string()).collect();
+    }
+}
+
+#[cfg(test)]
+mod smallest_number {
+    use super::*;
+
+    #[test]
+    fn case_1() {
+        let result = Solution::smallest_number(String::from("IIIDIDDD"));
+        assert_eq!(result, "123549876");
+    }
+
+    #[test]
+    fn case_2() {
+        let result = Solution::smallest_number(String::from("DDD"));
+        assert_eq!(result, "4321");
+    }
+}
+
+/**
+ * https://leetcode.com/problems/the-k-th-lexicographical-string-of-all-happy-strings-of-length-n/
+ */
+impl Solution {
+    fn get_left(c: char) -> Vec<char> {
+        match c {
+            'a' => vec!['b', 'c'],
+            'b' => vec!['a', 'c'],
+            'c' => vec!['a', 'b'],
+            _ => vec!['a', 'b', 'c'],
+        }
+    }
+
+    fn happy_string(current: &mut Vec<char>, n: usize, k: usize, i: usize, j: &mut usize) -> bool {
+        if i == n && *j == k {
+            return true;
+        }
+
+        if i == n {
+            *j += 1;
+            return false;
+        }
+
+        let left = if i == 0 {
+            Self::get_left('w')
+        } else {
+            Self::get_left(current[i - 1])
+        };
+
+        for &c in left.iter() {
+            current[i] = c;
+
+            let result = Self::happy_string(current, n, k, i + 1, j);
+
+            if result {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    pub fn get_happy_string(n: i32, k: i32) -> String {
+        let mut current = vec!['_'; n as usize];
+        let mut j = 1;
+
+        if Self::happy_string(&mut current, n as usize, k as usize, 0, &mut j) {
+            return current.iter().collect();
+        } else {
+            return String::from("");
+        }
+    }
+}
+
+#[cfg(test)]
+mod get_happy_string {
+    use super::*;
+
+    #[test]
+    fn case_1() {
+        let result = Solution::get_happy_string(1, 3);
+        assert_eq!(result, String::from("c"));
+    }
+
+    #[test]
+    fn case_2() {
+        let result = Solution::get_happy_string(1, 4);
+        assert_eq!(result, String::from(""));
+    }
+
+    #[test]
+    fn case_3() {
+        let result = Solution::get_happy_string(3, 9);
+        assert_eq!(result, String::from("cab"));
     }
 }
