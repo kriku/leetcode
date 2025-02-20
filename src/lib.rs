@@ -954,6 +954,37 @@ mod construct_distanced_sequence {
 
 /**
  * https://leetcode.com/problems/construct-smallest-number-from-di-string/
+ * constructive solution
+ */
+impl Solution {
+    pub fn smallest_number_2(pattern: String) -> String {
+        let mut stack: Vec<usize> = vec![];
+        let mut res: Vec<usize> = vec![];
+
+        for (i, c) in pattern.chars().enumerate() {
+            match c {
+                'I' => {
+                    res.push(i + 1);
+                    while stack.len() > 0 {
+                        res.push(stack.pop().unwrap());
+                    }
+                }
+                _ => stack.push(i + 1),
+            }
+        }
+
+        res.push(stack.len() + res.len() + 1);
+
+        while stack.len() > 0 {
+            res.push(stack.pop().unwrap());
+        }
+
+        res.into_iter().map(|i| i.to_string()).collect::<String>()
+    }
+}
+
+/**
+ * https://leetcode.com/problems/construct-smallest-number-from-di-string/
  */
 impl Solution {
     fn backtracking(
@@ -1029,7 +1060,7 @@ mod smallest_number {
 
     #[test]
     fn case_1() {
-        let result = Solution::smallest_number(String::from("IIIDIDDD"));
+        let result = Solution::smallest_number_2(String::from("IIIDIDDD"));
         assert_eq!(result, "123549876");
     }
 
@@ -1114,5 +1145,33 @@ mod get_happy_string {
     fn case_3() {
         let result = Solution::get_happy_string(3, 9);
         assert_eq!(result, String::from("cab"));
+    }
+}
+
+/**
+ * https://leetcode.com/problems/find-unique-binary-string/
+ */
+impl Solution {
+    pub fn find_different_binary_string(nums: Vec<String>) -> String {
+        nums.iter()
+            .enumerate()
+            .map(|(i, s)| match s.chars().nth(i) {
+                Some('0') => '1',
+                Some('1') => '0',
+                _ => '?', // this happens if string lengths is not equal
+            })
+            .collect()
+    }
+}
+
+#[cfg(test)]
+mod find_different_binary_string {
+    use super::*;
+
+    #[test]
+    fn case_1() {
+        let result =
+            Solution::find_different_binary_string(vec![String::from("00"), String::from("10")]);
+        assert_eq!(result, String::from("11"));
     }
 }
