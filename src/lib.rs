@@ -1,4 +1,8 @@
+use std::cell::RefCell;
+use std::cmp::Reverse;
 use std::cmp::{self, Ordering};
+use std::collections::{BTreeMap, BTreeSet, BinaryHeap, HashMap, HashSet, VecDeque};
+use std::rc::Rc;
 
 pub struct Solution {}
 
@@ -98,8 +102,6 @@ mod tests_are_almost_equal {
 /**
  * https://leetcode.com/problems/tuple-with-same-product/
  */
-use std::collections::{BTreeMap, BTreeSet, BinaryHeap, HashMap, HashSet};
-
 impl Solution {
     pub fn product_pairs_count(nums: &Vec<i32>) -> BTreeMap<i32, i32> {
         let mut products: BTreeMap<i32, i32> = BTreeMap::new();
@@ -391,7 +393,6 @@ mod number_containers {
 /**
  * https://leetcode.com/problems/count-number-of-bad-pairs/
  */
-
 // use std::collections::HashMap;
 
 impl Solution {
@@ -640,8 +641,8 @@ mod maximum_sum {
 /**
  * https://leetcode.com/problems/minimum-operations-to-exceed-threshold-value-ii/
  */
-// use std::collections::BinaryHeap;
-use std::cmp::Reverse;
+// use std::cmp::Reverse;
+// use std::rc::Rc;
 
 impl Solution {
     pub fn min_operations(nums: Vec<i32>, k: i32) -> i32 {
@@ -1173,5 +1174,575 @@ mod find_different_binary_string {
         let result =
             Solution::find_different_binary_string(vec![String::from("00"), String::from("10")]);
         assert_eq!(result, String::from("11"));
+    }
+}
+
+/**
+ * https://leetcode.com/problems/find-elements-in-a-contaminated-binary-tree/
+ */
+
+// Definition for a binary tree node.
+// #[derive(Debug, PartialEq, Eq)]
+// pub struct TreeNode {
+//     pub val: i32,
+//     pub left: Option<Rc<RefCell<TreeNode>>>,
+//     pub right: Option<Rc<RefCell<TreeNode>>>,
+// }
+
+// impl TreeNode {
+//     #[inline]
+//     pub fn new(val: i32) -> Self {
+//         TreeNode {
+//             val,
+//             left: None,
+//             right: None,
+//         }
+//     }
+// }
+struct FindElements {
+    values: HashSet<i32>,
+}
+
+/**
+ * `&self` means the method takes an immutable reference.
+ * If you need a mutable reference, change it to `&mut self` instead.
+ */
+impl FindElements {
+    fn new(root: Option<Rc<RefCell<TreeNode>>>) -> Self {
+        let mut stack = VecDeque::new();
+        let mut values = HashSet::new();
+
+        if let Some(node) = root {
+            stack.push_front((Rc::clone(&node), 0));
+        }
+
+        while let Some((node, index)) = stack.pop_front() {
+            values.insert(index);
+
+            if let Some(left) = &node.borrow().left {
+                stack.push_back((Rc::clone(left), index * 2 + 1));
+            }
+            if let Some(right) = &node.borrow().right {
+                stack.push_back((Rc::clone(right), index * 2 + 2));
+            }
+        }
+        FindElements { values }
+    }
+
+    fn find(&self, target: i32) -> bool {
+        self.values.contains(&target)
+    }
+}
+
+/**
+ * Your FindElements object will be instantiated and called as such:
+ * let obj = FindElements::new(root);
+ * let ret_1: bool = obj.find(target);
+ */
+
+#[cfg(test)]
+mod find_elements {
+    use super::*;
+
+    #[test]
+    fn case_1() {
+        let root = Some(Rc::new(RefCell::new(TreeNode {
+            val: -1,
+            left: None,
+            right: Some(Rc::new(RefCell::new(TreeNode {
+                val: -1,
+                left: None,
+                right: None,
+            }))),
+        })));
+
+        let tree = FindElements::new(root);
+        assert_eq!(tree.find(1), false);
+        assert_eq!(tree.find(2), true);
+    }
+}
+
+/**
+ * https://leetcode.com/problems/recover-a-tree-from-preorder-traversal/
+ */
+
+// Definition for a binary tree node.
+// #[derive(Debug, PartialEq, Eq)]
+// pub struct TreeNode {
+//     pub val: i32,
+//     pub left: Option<Rc<RefCell<TreeNode>>>,
+//     pub right: Option<Rc<RefCell<TreeNode>>>,
+// }
+
+// impl TreeNode {
+//     #[inline]
+//     pub fn new(val: i32) -> Self {
+//         TreeNode {
+//             val,
+//             left: None,
+//             right: None,
+//         }
+//     }
+// }
+
+impl Solution {
+    pub fn recover_from_preorder(traversal: String) -> Option<Rc<RefCell<TreeNode>>> {
+        let t: Vec<char> = traversal.chars().collect();
+        let mut cursor = 0usize;
+        let mut parents = vec![];
+        let mut root = None;
+
+        while cursor < t.len() {
+            let mut i = cursor;
+
+            while let Some(&v) = t.get(i) {
+                if v != '-' {
+                    break;
+                }
+                i += 1;
+            }
+
+            let depth = i - cursor;
+            cursor = i;
+
+            while let Some(&v) = t.get(i) {
+                if v == '-' {
+                    break;
+                }
+                i += 1;
+            }
+
+            let value: i32 = traversal[cursor..i].parse().unwrap();
+            cursor = i;
+
+            let node = Rc::new(RefCell::new(TreeNode::new(value)));
+
+            let mut parent: Option<Rc<RefCell<TreeNode>>> = None;
+
+            while let Some((p, d)) = parents.pop() {
+                if depth > d {
+                    parent = Some(p);
+                    break;
+                }
+            }
+
+            if let Some(p) = parent {
+                parents.push((Rc::clone(&p), depth - 1));
+
+                if p.borrow().left.is_none() {
+                    p.borrow_mut().left = Some(Rc::clone(&node));
+                } else {
+                    p.borrow_mut().right = Some(Rc::clone(&node));
+                }
+            } else {
+                root = Some(Rc::clone(&node));
+            }
+
+            parents.push((Rc::clone(&node), depth));
+        }
+
+        return root;
+    }
+}
+
+#[cfg(test)]
+mod recover_from_preorder {
+    use super::*;
+
+    #[test]
+    fn case_1() {
+        let result = Solution::recover_from_preorder(String::from("1-2-3"));
+        let root = Rc::new(RefCell::new(TreeNode::new(1)));
+        let left = Rc::new(RefCell::new(TreeNode::new(2)));
+        let right = Rc::new(RefCell::new(TreeNode::new(3)));
+
+        root.borrow_mut().left = Some(left);
+        root.borrow_mut().right = Some(right);
+
+        assert_eq!(result, Some(root));
+    }
+}
+
+/**
+ * https://leetcode.com/problems/construct-binary-tree-from-preorder-and-postorder-traversal/
+ */
+// use std::cell::RefCell;
+// use std::rc::Rc;
+/**
+ *
+ *
+ */
+// Definition for a binary tree node.
+#[derive(Debug, PartialEq, Eq)]
+pub struct TreeNode {
+    pub val: i32,
+    pub left: Option<Rc<RefCell<TreeNode>>>,
+    pub right: Option<Rc<RefCell<TreeNode>>>,
+}
+
+impl TreeNode {
+    #[inline]
+    pub fn new(val: i32) -> Self {
+        TreeNode {
+            val,
+            left: None,
+            right: None,
+        }
+    }
+}
+
+impl Solution {
+    pub fn construct_from_pre_post(
+        preorder: Vec<i32>,
+        postorder: Vec<i32>,
+    ) -> Option<Rc<RefCell<TreeNode>>> {
+        let mut parents: Vec<Rc<RefCell<TreeNode>>> = vec![];
+        let mut root = None;
+        let mut postorder = postorder.iter().peekable();
+
+        for v in preorder {
+            let node = Rc::new(RefCell::new(TreeNode::new(v)));
+
+            if let Some(parent) = parents.pop() {
+                if parent.borrow().left.is_none() {
+                    parent.borrow_mut().left = Some(Rc::clone(&node));
+                } else {
+                    parent.borrow_mut().right = Some(Rc::clone(&node));
+                }
+
+                parents.push(Rc::clone(&parent));
+            } else {
+                root = Some(Rc::clone(&node));
+            }
+
+            parents.push(Rc::clone(&node));
+
+            while let Some(&value) = postorder.peek() {
+                if let Some(parent) = parents.pop() {
+                    if parent.borrow().val == *value {
+                        postorder.next();
+                        continue;
+                    } else {
+                        parents.push(parent);
+                        break;
+                    }
+                } else {
+                    break;
+                }
+            }
+        }
+
+        return root;
+    }
+}
+
+#[cfg(test)]
+mod construct_from_pre_post {
+    use super::*;
+
+    #[test]
+    fn case_0() {
+        let result = Solution::construct_from_pre_post(vec![1, 2, 3], vec![2, 3, 1]);
+        let root = Rc::new(RefCell::new(TreeNode::new(1)));
+        let left = Rc::new(RefCell::new(TreeNode::new(2)));
+        let right = Rc::new(RefCell::new(TreeNode::new(3)));
+
+        root.borrow_mut().left = Some(left);
+        root.borrow_mut().right = Some(right);
+
+        assert_eq!(result, Some(root));
+    }
+
+    #[test]
+    fn case_1() {
+        let result = Solution::construct_from_pre_post(vec![1, 2, 4, 5], vec![4, 5, 2, 1]);
+        let root = Rc::new(RefCell::new(TreeNode::new(1)));
+        let left_0 = Rc::new(RefCell::new(TreeNode::new(2)));
+        let left_1 = Rc::new(RefCell::new(TreeNode::new(4)));
+        let right_1 = Rc::new(RefCell::new(TreeNode::new(5)));
+
+        root.borrow_mut().left = Some(Rc::clone(&left_0));
+        left_0.borrow_mut().left = Some(Rc::clone(&left_1));
+        left_0.borrow_mut().right = Some(Rc::clone(&right_1));
+
+        assert_eq!(result, Some(root));
+    }
+
+    #[test]
+    fn case_2() {
+        let result =
+            Solution::construct_from_pre_post(vec![1, 2, 4, 5, 3, 6, 7], vec![4, 5, 2, 6, 7, 3, 1]);
+        let root = Rc::new(RefCell::new(TreeNode::new(1)));
+        let r_2 = Rc::new(RefCell::new(TreeNode::new(2)));
+        let r_3 = Rc::new(RefCell::new(TreeNode::new(3)));
+        let r_4 = Rc::new(RefCell::new(TreeNode::new(4)));
+        let r_5 = Rc::new(RefCell::new(TreeNode::new(5)));
+        let r_6 = Rc::new(RefCell::new(TreeNode::new(6)));
+        let r_7 = Rc::new(RefCell::new(TreeNode::new(7)));
+
+        root.borrow_mut().left = Some(Rc::clone(&r_2));
+        root.borrow_mut().right = Some(Rc::clone(&r_3));
+        r_2.borrow_mut().left = Some(Rc::clone(&r_4));
+        r_2.borrow_mut().right = Some(Rc::clone(&r_5));
+        r_3.borrow_mut().left = Some(Rc::clone(&r_6));
+        r_3.borrow_mut().right = Some(Rc::clone(&r_7));
+
+        assert_eq!(result, Some(root));
+    }
+}
+
+/**
+ * https://leetcode.com/problems/most-profitable-path-in-a-tree/
+ */
+// use std::collections::{HashMap, HashSet, VecDeque};
+// use std::rc::Rc;
+
+enum List {
+    Cons(i32, Rc<List>),
+    Nil,
+}
+
+impl Solution {
+    pub fn most_profitable_path(edges: Vec<Vec<i32>>, bob: i32, amounts: Vec<i32>) -> i32 {
+        // build the tree
+
+        let mut tree = HashMap::new();
+
+        for edge in edges {
+            let (u, v) = (edge[0], edge[1]);
+            tree.entry(u).or_insert(Vec::new()).push(v);
+            tree.entry(v).or_insert(Vec::new()).push(u);
+        }
+
+        // bfs find way "bob" -> 0
+
+        let mut bob_visited = HashSet::new();
+        let mut bob_to_visit = VecDeque::new();
+        let mut probably_bob_path = None;
+
+        bob_to_visit.push_front((vec![bob], Rc::new(List::Nil)));
+
+        while let Some((nodes, way)) = bob_to_visit.pop_front() {
+            for node in nodes {
+                let new_way = Rc::new(List::Cons(node, way.clone()));
+
+                if node == 0 {
+                    probably_bob_path = Some(Rc::clone(&new_way));
+                    break;
+                }
+
+                // tree[node] has to be defined - by construction
+                let adjacent = tree.get(&node).unwrap();
+
+                bob_visited.insert(node);
+
+                let new_nodes = adjacent
+                    .iter()
+                    .filter(|n| !bob_visited.contains(n))
+                    .map(|n| *n)
+                    .collect();
+
+                bob_to_visit.push_back((new_nodes, new_way));
+            }
+
+            if probably_bob_path.is_some() {
+                break;
+            }
+        }
+
+        let mut bob_path: VecDeque<i32> = VecDeque::new();
+
+        if let Some(mut root) = probably_bob_path {
+            while let List::Cons(node, next) = root.as_ref() {
+                bob_path.push_front(*node);
+                root = next.clone();
+            }
+        } else {
+            panic!("bob cannot get to 0")
+        }
+
+        let bob_time = bob_path
+            .iter()
+            .enumerate()
+            .map(|(index, node)| (*node, index))
+            .collect::<HashMap<_, _>>();
+
+        // bfs find most profitable alice path
+
+        let mut alice_visited = HashSet::new();
+        let mut alice_to_visit = VecDeque::new();
+        alice_to_visit.push_front((vec![0], (0, 0)));
+        let mut max: Option<i32> = None;
+
+        while let Some((nodes, (step, step_amount))) = alice_to_visit.pop_front() {
+            for node in nodes {
+                // tree[node] has to be defined - by construction
+                let adjacent = tree.get(&node).unwrap();
+                let amount = amounts[node as usize];
+                alice_visited.insert(node);
+                let mut new_amount = step_amount;
+
+                if let Some(&bob_at) = bob_time.get(&node) {
+                    if bob_at == step {
+                        new_amount += amount / 2;
+                    } else if bob_at > step {
+                        new_amount += amount;
+                    }
+                } else {
+                    new_amount += amount;
+                }
+
+                let new_nodes: Vec<i32> = adjacent
+                    .iter()
+                    .filter(|n| !alice_visited.contains(n))
+                    .map(|n| *n)
+                    .collect();
+
+                if new_nodes.len() == 0 {
+                    if let Some(m) = max {
+                        max = Some(m.max(new_amount));
+                    } else {
+                        max = Some(new_amount);
+                    }
+                }
+
+                alice_to_visit.push_back((new_nodes, (step + 1, new_amount)));
+            }
+        }
+
+        if let Some(max) = max {
+            return max;
+        } else {
+            panic!("there is no solution");
+        }
+    }
+}
+
+#[cfg(test)]
+mod most_profitable_path {
+    use super::*;
+
+    #[test]
+    fn case_1() {
+        let result = Solution::most_profitable_path(
+            vec![vec![0, 1], vec![1, 2], vec![1, 3], vec![3, 4]],
+            3,
+            vec![-2, 4, 2, -4, 6],
+        );
+        assert_eq!(result, 6);
+    }
+
+    #[test]
+    fn case_2() {
+        let result = Solution::most_profitable_path(vec![vec![0, 1]], 1, vec![-1000, 2000]);
+        assert_eq!(result, -1000);
+    }
+
+    #[test]
+    fn case_3() {
+        let result =
+            Solution::most_profitable_path(vec![vec![0, 1], vec![1, 2]], 2, vec![10, 20, 10]);
+        assert_eq!(result, 20);
+    }
+}
+
+/**
+ * https://leetcode.com/problems/number-of-sub-arrays-with-odd-sum/
+ */
+
+/*
+
+1 2 3 4
+
+subarray counts:
+1 - 1
+2 - 3
+3 - 6
+4 - 10
+5 - 15
+6 - 21
+7 - 28
+8 - 36
+n (n+1) /2
+
+
+1 - (odd: 1)
+1 2 - (odd: 1) + (odd: 1, even: 1) = (odd: 2, even: 1)
+1 2 3 - (odd: 2, even: 1) + (odd: 2, even: 1) = (odd: 4, even: 2)
+1 2 3 4 - (odd: 4, even: 2) + (odd: 2, even: 2) = (odd: 6, even: 2)
+1 2 3 4 5 - (odd: 6, even: 4) + (odd: 3, even: 2) = (odd: 9, even: 6)
+
+1 - 1 - (1, 0)
+1 1 - 2 - (1, 0) + (1, 1) = (2, 1)
+1 1 1 - 3 - (2, 1) + (2, 1) = (4, 2)
+
+1 1 1 1 - 4 - (4, 2) + (2, 2) = (6, 4)
+1 1 1 2 - 5 - (4, 2) + (2, 2) = (6, 4)
+
+1 1 1 1 1 - 5 - (6, 4) + (3, 2) = (9, 6)
+1 1 1 1 2 - 6 - (6, 4) + (2, 3) = (9, 6)
+
+1 1 1 1 1 1 - 6 - (9, 6) + (3, 3) = (12, 9)
+1 1 1 1 1 2 - 7 - (9, 6) + (3, 3) = (12, 9)
+
+1 1 1 1 2 2 - 8 - (9, 6) + (2, 4) = (11, 10)
+1 1 1 1 2 2 2 - 10 - (11, 10) + (2, 5) = (13, 15)
+1 1 1 1 2 2 2 1 - 11 - (13, 15) + (6, 2) = (19, 17)
+
+1 1 1 1 1 1 1 - 7 - (12, 9) + (4, 3) = (16, 12)
+1 1 1 1 1 1 2 - 8 - (12, 9) + (3, 4) = (15, 13)
+
+
+so the algorithm is:
+- for each item of array
+    - if item is even
+        - increase even counter
+    - if item is odd
+        - swap even and odd counter
+        - increase odd counter
+    - accumulate odd sum with counter
+
+ */
+impl Solution {
+    pub fn num_of_subarrays(arr: Vec<i32>) -> i32 {
+        let mut odd = 0;
+        let mut even = 0;
+        let mut sum: i32 = 0;
+
+        for n in arr {
+            if n % 2 == 0 {
+                even += 1;
+            } else {
+                (even, odd) = (odd, even);
+                odd += 1;
+            }
+
+            sum = (sum + odd) % 1_000_000_007;
+        }
+
+        return sum;
+    }
+}
+
+#[cfg(test)]
+mod num_of_subarrays {
+    use super::*;
+
+    #[test]
+    fn case_1() {
+        let result = Solution::num_of_subarrays(vec![1, 3, 5]);
+        assert_eq!(result, 4);
+    }
+
+    #[test]
+    fn case_2() {
+        let result = Solution::num_of_subarrays(vec![2, 4, 6]);
+        assert_eq!(result, 0);
+    }
+
+    #[test]
+    fn case_3() {
+        let result = Solution::num_of_subarrays(vec![1, 2, 3, 4, 5, 6, 7]);
+        assert_eq!(result, 16);
     }
 }
