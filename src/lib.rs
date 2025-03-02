@@ -2,9 +2,107 @@ use std::cell::RefCell;
 use std::cmp::Reverse;
 use std::cmp::{self, Ordering};
 use std::collections::{BTreeMap, BTreeSet, BinaryHeap, HashMap, HashSet, VecDeque};
+use std::i32;
 use std::rc::Rc;
+use std::str;
 
 pub struct Solution {}
+
+/**
+ * https://leetcode.com/problems/special-array-i/
+ */
+impl Solution {
+    pub fn is_array_special(nums: Vec<i32>) -> bool {
+        let is_even = |n| n % 2 == 0;
+        let mut parity = is_even(nums[0]);
+
+        for n in nums {
+            if is_even(n) != parity {
+                return false;
+            }
+            parity = !parity;
+        }
+
+        return true;
+    }
+
+    pub fn is_array_special_short(nums: Vec<i32>) -> bool {
+        !nums.as_slice().windows(2).any(|x| (x[0] + x[1]) % 2 == 0)
+    }
+}
+
+#[cfg(test)]
+mod is_array_special {
+    use super::*;
+
+    #[test]
+    fn case_1() {
+        let result = Solution::is_array_special(vec![2, 1, 6]);
+        assert_eq!(result, true);
+    }
+}
+
+/**
+ * https://leetcode.com/problems/check-if-array-is-sorted-and-rotated/
+ */
+impl Solution {
+    pub fn check(nums: Vec<i32>) -> bool {
+        let mut x = nums.len();
+
+        for i in 0..nums.len() - 1 {
+            if nums[i] > nums[i + 1] {
+                x = i + 1;
+                break;
+            }
+        }
+
+        for i in 0..nums.len() - 1 {
+            let j = (i + x) % nums.len();
+            let k = (i + x + 1) % nums.len();
+
+            if nums[j] > nums[k] {
+                return false;
+            }
+        }
+
+        return true;
+    }
+}
+
+#[cfg(test)]
+mod check {
+    use super::*;
+
+    #[test]
+    fn case_1() {
+        let result = Solution::check(vec![3, 4, 5, 1, 2]);
+        assert_eq!(result, true);
+    }
+
+    #[test]
+    fn case_2() {
+        let result = Solution::check(vec![2, 1, 3, 4]);
+        assert_eq!(result, false);
+    }
+
+    #[test]
+    fn case_3() {
+        let result = Solution::check(vec![1, 2, 3]);
+        assert_eq!(result, true);
+    }
+
+    #[test]
+    fn case_4() {
+        let result = Solution::check(vec![1, 1, 1]);
+        assert_eq!(result, true);
+    }
+
+    #[test]
+    fn case_5() {
+        let result = Solution::check(vec![2, 1]);
+        assert_eq!(result, true);
+    }
+}
 
 /**
  * https://leetcode.com/problems/maximum-ascending-subarray-sum/
@@ -1744,5 +1842,659 @@ mod num_of_subarrays {
     fn case_3() {
         let result = Solution::num_of_subarrays(vec![1, 2, 3, 4, 5, 6, 7]);
         assert_eq!(result, 16);
+    }
+}
+
+/**
+ * https://leetcode.com/problems/maximum-absolute-sum-of-any-subarray/
+ */
+impl Solution {
+    pub fn max_absolute_sum(nums: Vec<i32>) -> i32 {
+        let (mut cmax, mut max) = (0, 0);
+        let (mut cmin, mut min) = (0, 0);
+
+        for n in nums {
+            cmax = n.max(cmax + n);
+            max = max.max(cmax);
+            cmin = n.min(cmin + n);
+            min = min.min(cmin);
+        }
+
+        return max.max(-min);
+    }
+}
+
+#[cfg(test)]
+mod max_absolute_sum {
+    use super::*;
+
+    #[test]
+    fn case_1() {
+        let result = Solution::max_absolute_sum(vec![1, -3, 2, 3, -4]);
+        assert_eq!(result, 5);
+    }
+
+    #[test]
+    fn case_2() {
+        let result = Solution::max_absolute_sum(vec![2, -5, 1, -4, 3, -2]);
+        assert_eq!(result, 8);
+    }
+
+    #[test]
+    fn case_3() {
+        let result = Solution::max_absolute_sum(vec![1, -3, 4, -2, -1, 6]);
+        assert_eq!(result, 9);
+    }
+}
+
+/**
+ * https://leetcode.com/problems/letter-tile-possibilities/
+ */
+
+/*
+
+AAB - 8
+A B
+AA AB BA
+AAB ABA BAA
+
+AAA - 3
+A
+AA
+AAA
+
+ABC - 15
+A B C
+AB AC BC BA CA CB
+ABC ACB BAC BCA CAB CBA
+
+*/
+impl Solution {
+    pub fn num_tile_possibilities(tiles: String) -> i32 {
+        let tiles: Vec<char> = tiles.chars().collect();
+        let mut unique = HashSet::new();
+        let frequencies = tiles.iter().fold(HashMap::new(), |mut map, value| {
+            map.entry(value).and_modify(|f| *f += 1).or_insert(1);
+            map
+        });
+
+        fn backtrack(
+            frequencies: &HashMap<&char, i32>,
+            unique: &mut HashSet<String>,
+            letters: &Vec<char>,
+            current: &mut Vec<char>,
+            n: usize,
+            i: usize,
+        ) -> bool {
+            if i == n {
+                return true;
+            }
+
+            for letter in letters {
+                let freq = frequencies.get(letter).unwrap();
+                let count = current
+                    .iter()
+                    .fold(0, |a, v| if v == letter { a + 1 } else { a });
+
+                if count >= *freq {
+                    continue;
+                }
+
+                current.push(*letter);
+                let the_end = backtrack(frequencies, unique, letters, current, n, i + 1);
+                if the_end {
+                    unique.insert(current.iter().collect());
+                }
+
+                current.pop();
+            }
+
+            return false;
+        }
+
+        for i in 1..=tiles.len() {
+            backtrack(&frequencies, &mut unique, &tiles, &mut vec![], i, 0);
+        }
+
+        return unique.len() as i32;
+    }
+}
+
+#[cfg(test)]
+mod num_tile_possibilities {
+    use super::*;
+
+    #[test]
+    fn case_1() {
+        let result = Solution::num_tile_possibilities(String::from("AAB"));
+        assert_eq!(result, 8);
+    }
+
+    #[test]
+    fn case_2() {
+        let result = Solution::num_tile_possibilities(String::from("AAABBC"));
+        assert_eq!(result, 188);
+    }
+
+    #[test]
+    fn case_3() {
+        let result = Solution::num_tile_possibilities(String::from("V"));
+        assert_eq!(result, 1);
+    }
+}
+
+/**
+ * https://leetcode.com/problems/length-of-longest-fibonacci-subsequence/
+ */
+
+/*
+
+// 1 2 3 5 6 8 13
+
+1
+
+1 - (None, 1)
+
+1 2
+
+2 - (None, 1)
+3 - (2, 2)
+
+1 2 3
+
+5 - (3, 3) // can be omitted
+4 - (3, 2)
+
+1 2 3 5
+
+5 - (None, 1)
+8 - (5, 4)
+8 - (5, 3) // redundant
+7 - (5, 2)
+6 - (5, 2) // can be omitted
+
+1 2 3 5 6
+
+11 - (6, 3)
+11 - (6, 2) // redundant
+9 - (6, 2)
+8 - [(5, 3), (6, 2)] // collision - use longest
+7 - [(5, 2), (6, 2)] // collision - save both
+
+1 2 3 5 6 7
+
+12 - [(7, 3)]
+13 - [(7, 3)]
+
+7 - [(5, 2), (6, 2)] // collision - save both
+
+
+
+naive approach:
+
+- max_len
+- iterate (i) over each element O(n)
+    - look for [arr[i]] in hashmap O(1)
+        - if there are some pairs with suitable sum
+            - calculate new sums of [arr[i] + last_in_pair] = (arr[i], new_len) O(1)
+            - max_len = max_len.max(new_len) O(1)
+    - iterate (j) from 0 to (i - 1) O(n)
+        - if !hashmap.contains([arr[i] + arr[j]])
+            - add [arr[i] + arr[j]] = (arr[j], 2) to hashmap - as started pair
+
+O(n^2)
+
+
+*/
+impl Solution {
+    pub fn len_longest_fib_subseq_top(arr: Vec<i32>) -> i32 {
+        let mut dp = HashMap::new();
+        let set: HashSet<i32> = arr.iter().cloned().collect();
+        let mut max_len = 0;
+
+        for i in 0..arr.len() {
+            for j in 0..i {
+                let x = arr[j];
+                let y = arr[i];
+                let z = y - x;
+
+                if z < x && set.contains(&z) {
+                    let len = *dp.get(&(z, x)).unwrap_or(&2) + 1;
+                    dp.insert((x, y), len);
+                    max_len = max_len.max(len);
+                }
+            }
+        }
+
+        max_len
+    }
+
+    pub fn len_longest_fib_subseq(arr: Vec<i32>) -> i32 {
+        let mut numbers: HashSet<i32> = arr.iter().cloned().collect();
+
+        for &n in &arr {
+            numbers.insert(n);
+        }
+
+        fn search(a: i32, b: i32, length: i32, numbers: &HashSet<i32>) -> i32 {
+            if numbers.contains(&(a + b)) {
+                return search(b, a + b, length + 1, numbers);
+            }
+            return length;
+        }
+
+        let mut max_length = 0;
+
+        for i in 0..arr.len() - 1 {
+            for j in i + 1..arr.len() {
+                let length = search(arr[i], arr[j], 2, &numbers);
+                max_length = max_length.max(length);
+            }
+        }
+
+        if max_length > 2 {
+            max_length
+        } else {
+            0
+        }
+    }
+
+    pub fn len_longest_fib_subseq_takes_to_long(arr: Vec<i32>) -> i32 {
+        let mut sums: HashMap<i32, HashMap<i32, i32>> = HashMap::new();
+        let mut max_len = 0;
+
+        for (i, &n) in arr.iter().enumerate() {
+            let mut new_chains: HashMap<i32, HashMap<i32, i32>> = HashMap::new();
+
+            if let Some(chains) = sums.get(&n) {
+                for (last, length) in chains {
+                    let mut new_chain = HashMap::new();
+                    new_chain.insert(n, length + 1);
+                    new_chains.insert(last + n, new_chain);
+                    max_len = max_len.max(length + 1);
+                }
+            }
+
+            for (k, v) in new_chains {
+                let chains = sums.entry(k).or_insert(HashMap::new());
+                for (s, c) in v {
+                    chains.insert(s, c);
+                }
+            }
+
+            for j in 0..i {
+                let sum = arr[j] + n;
+                if let Some(chains) = sums.get(&sum) {
+                    if chains.contains_key(&n) {
+                        continue;
+                    }
+                }
+                let pairs = sums.entry(sum).or_insert(HashMap::new());
+                pairs.insert(n, 2);
+            }
+        }
+
+        return max_len;
+    }
+}
+
+#[cfg(test)]
+mod len_longest_fib_subseq {
+    use super::*;
+
+    #[test]
+    fn case_1() {
+        let result = Solution::len_longest_fib_subseq(vec![1, 2, 3, 4, 5, 6, 7, 8]);
+        assert_eq!(result, 5);
+    }
+
+    #[test]
+    fn case_2() {
+        let result = Solution::len_longest_fib_subseq(vec![1, 3, 7, 11, 12, 14, 18]);
+        assert_eq!(result, 3);
+    }
+
+    #[test]
+    fn case_3() {
+        let result =
+            Solution::len_longest_fib_subseq(vec![2, 4, 7, 8, 9, 10, 14, 15, 18, 23, 32, 50]);
+        assert_eq!(result, 5);
+    }
+
+    #[test]
+    fn case_4() {
+        let result = Solution::len_longest_fib_subseq(vec![
+            193, 3931, 5403, 6322, 7997, 11671, 12075, 12744, 14929, 19780, 19892, 22630, 22891,
+            23108, 24076, 24737, 25008, 25524, 25571, 25927, 26366, 26488, 27456, 28770, 29243,
+            29364, 31211, 34344, 34395, 35438, 35782, 36500, 36736, 38235, 38495, 39058, 39428,
+            39741, 40933, 42510, 42647, 43080, 43511, 45049, 45690, 46228, 48837, 48917, 49214,
+            51299, 51564, 51884, 56146, 59084, 61175, 61970, 64549, 64580, 64604, 67854, 68259,
+            72513, 72519, 72553, 74768, 75338, 81358, 81752, 82646, 83043, 84231, 85860, 89288,
+            90639, 91166, 92511, 94656, 99092, 99995, 100641, 100651, 100883, 102871, 105682,
+            106356, 106402, 107960, 109163, 109561, 110146, 111614, 114555, 115521, 115962, 117211,
+            118344, 120974, 124171, 125252, 126891, 128424, 128564, 129509, 130150, 130472, 130846,
+            131004, 131965, 132018, 132029, 133675, 137205, 137457, 139003, 139801, 143190, 143415,
+            143939, 144133, 145500, 146562, 148510, 151133, 152096, 153737, 153950, 161192, 161682,
+            163066, 163684, 166017, 168298, 170078, 172226, 172459, 172480, 174367, 175769, 179551,
+            179848, 179890, 180621, 183143, 183451, 184220, 184654, 186526, 187215, 192908, 192915,
+            193011, 197285, 197861, 198818, 199279, 199562, 202490, 204717, 205441, 208252, 208266,
+            209076, 209124, 212614, 213017, 213626, 215479, 215534, 216435, 217411, 219537, 220416,
+            221314, 223369, 223589, 223607, 226185, 227154, 228939, 229355, 230865, 234005, 235688,
+            236374, 239000, 239048, 239121, 240533, 240594, 240857, 241017, 242479, 243428, 245782,
+            248591, 249049, 249589, 251441, 252343, 253349, 257086, 257973, 258106, 258215, 258728,
+            262357, 262853, 263712, 266381, 267986, 269300, 270847, 271135, 272491, 274534, 275071,
+            275755, 276040, 278542, 279901, 282508, 283594, 283841, 284062, 285110, 288409, 289951,
+            290495, 291005, 293485, 293714, 296041, 296998, 298301, 298547, 298707, 302452, 303668,
+            304790, 305085, 305760, 306250, 308184, 309427, 310983, 312492, 315395, 315503, 318208,
+            319058, 320243, 322594, 323234, 325609, 325965, 326113, 326661, 330505, 331230, 331429,
+            332978, 333538, 334240, 337022, 337891, 341330, 342008, 342146, 343983, 344973, 345292,
+            345657, 346504, 346561, 347477, 348605, 348956, 349051, 350624, 350878, 351424, 351485,
+            352080, 353307, 353426, 353607, 357398, 361221, 361345, 361873, 363861, 365475, 366154,
+            366295, 370065, 370702, 371322, 371444, 373826, 374644, 380984, 381646, 381887, 381945,
+            381983, 383219, 384169, 384968, 385012, 385174, 385807, 386344, 387186, 388121, 389613,
+            390689, 391064, 391689, 392124, 393943, 395060, 397418, 398184, 400038, 400956, 401511,
+            402690, 402941, 404015, 404181, 404760, 413584, 415003, 415499, 416069, 417094, 422957,
+            423877, 424938, 425647, 426276, 427871, 428195, 428328, 428996, 429057, 429988, 430071,
+            431325, 432716, 433637, 438553, 440740, 441348, 442130, 444521, 445693, 448441, 448816,
+            449665, 450230, 450668, 450859, 451369, 451505, 453591, 455938, 458659, 460375, 463112,
+            463730, 464288, 465679, 466666, 467144, 468405, 468731, 478393, 478478, 479697, 480206,
+            480449, 480555, 480975, 481896, 482424, 483519, 483826, 485611, 485906, 486413, 486757,
+            487005, 488291, 490062, 491717, 493808, 494485, 495561, 496246, 498443, 502074, 504638,
+            504856, 505570, 506150, 506559, 507897, 510584, 515153, 516724, 517102, 517221, 517626,
+            518351, 519001, 519372, 519897, 520223, 520547, 521934, 523547, 523751, 526338, 527185,
+            528991, 529874, 530407, 530465, 530920, 533417, 533438, 534110, 534746, 537532, 539540,
+            540145, 540650, 541015, 541027, 543009, 546842, 548124, 548982, 552825, 554980, 557331,
+            557502, 558853, 560351, 564300, 565099, 568203, 568612, 570336, 571641, 572928, 573623,
+            573749, 574166, 574772, 575801, 575848, 576098, 576278, 576413, 576542, 577138, 577410,
+            579796, 579897, 580539, 580821, 581101, 581205, 581348, 582134, 582146, 582875, 583923,
+            584132, 584169, 586196, 591172, 591750, 593063, 595255, 595838, 596029, 596052, 596122,
+            597558, 599693, 600612, 600686, 601585, 602092, 604586, 606244, 606537, 608302, 610142,
+            614013, 614941, 615020, 615098, 616995, 619305, 619777, 620381, 620804, 622245, 622661,
+            623094, 623986, 626259, 626299, 626893, 627720, 628863, 630175, 633425, 634941, 636237,
+            639146, 639646, 641192, 641612, 641733, 642642, 643522, 643732, 644709, 644948, 645691,
+            645775, 647216, 647364, 647591, 647616, 651072, 655002, 656934, 657999, 658130, 660661,
+            662684, 663094, 663700, 666305, 669039, 669127, 673693, 675009, 675983, 677228, 677275,
+            678454, 678831, 679455, 681779, 681814, 683663, 686061, 686321, 689773, 694308, 694836,
+            694961, 697024, 699141, 699356, 699674, 699806, 701684, 702098, 703135, 704420, 706762,
+            707372, 708648, 709688, 710720, 711180, 711566, 713892, 714972, 718685, 719366, 719373,
+            724525, 724829, 725190, 725699, 725825, 726643, 728624, 728851, 731291, 734850, 735485,
+            736484, 736927, 737222, 738323, 738545, 739470, 740625, 740898, 746583, 747473, 750673,
+            752783, 753596, 754923, 755699, 757000, 760484, 760664, 761580, 764466, 765283, 765575,
+            767256, 768841, 770759, 770766, 771293, 771910, 774473, 774631, 775195, 777333, 778292,
+            778584, 778651, 778999, 780101, 781410, 781822, 783206, 784446, 787142, 787940, 788066,
+            790294, 791143, 792441, 792450, 795950, 796484, 797203, 797675, 798214, 799065, 801012,
+            801232, 801253, 802510, 802580, 802922, 804754, 805224, 805438, 807084, 809421, 811290,
+            813701, 813937, 813952, 815540, 815730, 819294, 820565, 821550, 823523, 825489, 827280,
+            828038, 828141, 831686, 831973, 833100, 833308, 833743, 834701, 834845, 835058, 835173,
+            835948, 837198, 837996, 839484, 839961, 844423, 844861, 849669, 850382, 852277, 852473,
+            853075, 854744, 855756, 856294, 856357, 857892, 860043, 860993, 861740, 862661, 865736,
+            866371, 867373, 867835, 869086, 872230, 873360, 874664, 875945, 882375, 883892, 884144,
+            887296, 887689, 889738, 890756, 892243, 893755, 894713, 895803, 895874, 896497, 898649,
+            899706, 900309, 901338, 901832, 904221, 904331, 904595, 908126, 908882, 909520, 912231,
+            912410, 913488, 915524, 916243, 916525, 918731, 920328, 920549, 922821, 922905, 924210,
+            927313, 927693, 928443, 930682, 930940, 933091, 933804, 935342, 937635, 943838, 946596,
+            948084, 950776, 952687, 957120, 959030, 959104, 959806, 960320, 960888, 965320, 966881,
+            967226, 969456, 970217, 972541, 972669, 973081, 974470, 974946, 975376, 976032, 976996,
+            978372, 979581, 979893, 982781, 984130, 985018, 985073, 985134, 988381, 989187, 992251,
+            994086, 995235, 997916, 998948,
+        ]);
+        assert_eq!(result, 5);
+    }
+}
+
+/**
+ * https://leetcode.com/problems/shortest-common-supersequence/
+ */
+
+/*
+
+
+abac, cab -> cabac
+aba, b -> aba
+a, bab -> bab
+abc, bcd -> abcd
+
+let we have two cursors for positions in strings respectively
+
+either
+1. move cursor in the first string - push char to result
+    if a char in the second string cursor position is equal
+        move cursor in the second string
+    else
+        move cursor in the second string to beginning
+
+    starting from cursor position if the second string - push char to result
+
+2. move cursor in the second string
+    ... same but for the first string
+
+3. return the shortest result string
+
+
+*/
+impl Solution {
+    pub fn shortest_common_supersequence(str1: String, str2: String) -> String {
+        let str1 = str1.as_bytes();
+        let str2 = str2.as_bytes();
+
+        /*
+
+          c a b
+        a 0 1 1
+        b 0 1 2
+        a 0 1 2
+        c 1 1 2
+
+        c a b a c
+
+          a b c
+        d 0 0 0
+        e 0 0 0
+        f 0 0 0
+
+        a d b e c f
+
+          a b c
+        d 0 0 0
+        b 0 1 1
+        c 0 1 2
+
+        a d b c
+
+          a b c
+        d 0 0 0
+        b 0 1 1
+        f 0 1 1
+
+        a d b c f
+
+          a b c
+        a 1 1 1
+        b 1 2 2
+
+
+        */
+
+        let mut lcs = vec![vec![0; str2.len()]; str1.len()];
+
+        for (i, &c1) in str1.iter().enumerate() {
+            for (j, &c2) in str2.iter().enumerate() {
+                if c1 == c2 {
+                    if i > 0 && j > 0 {
+                        lcs[i][j] = lcs[i - 1][j - 1] + 1;
+                    } else {
+                        lcs[i][j] = 1;
+                    }
+                } else {
+                    if i > 0 && j > 0 {
+                        lcs[i][j] = lcs[i - 1][j].max(lcs[i][j - 1]);
+                    } else if i > 0 {
+                        lcs[i][j] = lcs[i - 1][j];
+                    } else if j > 0 {
+                        lcs[i][j] = lcs[i][j - 1];
+                    } else {
+                        lcs[i][j] = 0;
+                    }
+                }
+            }
+        }
+
+        let (mut i, mut j) = (str1.len() - 1, str2.len() - 1);
+        let mut result = vec![];
+        let mut last_s1_poped = false;
+        let mut last_s2_poped = false;
+
+        while i > 0 || j > 0 {
+            if i > 0 && j > 0 {
+                if lcs[i - 1][j] == lcs[i][j - 1] {
+                    if lcs[i][j] != lcs[i - 1][j] {
+                        j -= 1;
+                    }
+                    result.push(str1[i]);
+                    i -= 1;
+                    continue;
+                }
+                if lcs[i - 1][j] > lcs[i][j - 1] {
+                    result.push(str1[i]);
+                    i -= 1;
+                    continue;
+                }
+                if lcs[i - 1][j] < lcs[i][j - 1] {
+                    result.push(str2[j]);
+                    j -= 1;
+                    continue;
+                }
+            }
+            if i > 0 {
+                if i > 0 && lcs[i - 1][j] < lcs[i][j] {
+                    last_s2_poped = true;
+                }
+                result.push(str1[i]);
+                i -= 1;
+            }
+            if j > 0 {
+                if j > 0 && lcs[i][j - 1] < lcs[i][j] {
+                    last_s1_poped = true;
+                }
+                result.push(str2[j]);
+                j -= 1;
+            }
+        }
+
+        if lcs[0][0] == 1 {
+            result.push(str1[0]);
+        } else {
+            if !last_s1_poped {
+                result.push(str1[0]);
+            }
+
+            if !last_s2_poped {
+                result.push(str2[0]);
+            }
+        }
+
+        let result: Vec<u8> = result.iter().copied().rev().collect();
+        return String::from(str::from_utf8(&result).unwrap());
+    }
+}
+
+#[cfg(test)]
+mod shortest_common_supersequence {
+    use super::*;
+
+    #[test]
+    fn case_1() {
+        let result =
+            Solution::shortest_common_supersequence(String::from("abac"), String::from("cab"));
+        assert_eq!(result, String::from("cabac"));
+    }
+
+    #[test]
+    fn case_2() {
+        let result =
+            Solution::shortest_common_supersequence(String::from("aba"), String::from("b"));
+        assert_eq!(result, String::from("aba"));
+    }
+
+    #[test]
+    fn case_3() {
+        let result = Solution::shortest_common_supersequence(
+            String::from("aaaaaaaa"),
+            String::from("aaaaaaaa"),
+        );
+        assert_eq!(result, String::from("aaaaaaaa"));
+    }
+
+    #[test]
+    fn case_4() {
+        let result = Solution::shortest_common_supersequence(
+            String::from("bbbaaaba"),
+            String::from("bbababbb"),
+        );
+        assert_eq!(result, String::from("bbbaaababbb"));
+    }
+
+    #[test]
+    fn case_5() {
+        let result = Solution::shortest_common_supersequence(
+            String::from("bcacaaab"),
+            String::from("bbabaccc"),
+        );
+        assert_eq!(result, String::from("bcacaababaccc"));
+    }
+
+    #[test]
+    fn case_6() {
+        let result = Solution::shortest_common_supersequence(
+            String::from("accabcba"),
+            String::from("aacbbbbbaa"),
+        );
+        assert_eq!(result, String::from("aaccabbbbcbaa"));
+    }
+}
+
+/**
+ * https://leetcode.com/problems/longest-common-subsequence/
+ */
+impl Solution {
+    pub fn longest_common_subsequence(text1: String, text2: String) -> i32 {
+        let str1 = text1.as_bytes();
+        let str2 = text2.as_bytes();
+
+        /*
+
+          c a b
+        a 0 1 1
+        b 0 1 2
+        a 0 1 2
+        c 1 1 2
+
+        */
+
+        let mut lcs = vec![vec![0; str2.len()]; str1.len()];
+
+        for (i, &c1) in str1.iter().enumerate() {
+            for (j, &c2) in str2.iter().enumerate() {
+                if c1 == c2 {
+                    if i > 0 && j > 0 {
+                        lcs[i][j] = lcs[i - 1][j - 1] + 1;
+                    } else {
+                        lcs[i][j] = 1;
+                    }
+                } else {
+                    if i > 0 && j > 0 {
+                        lcs[i][j] = lcs[i - 1][j].max(lcs[i][j - 1]);
+                    } else if i > 0 {
+                        lcs[i][j] = lcs[i - 1][j];
+                    } else if j > 0 {
+                        lcs[i][j] = lcs[i][j - 1];
+                    } else {
+                        lcs[i][j] = 0;
+                    }
+                }
+            }
+        }
+
+        lcs[str1.len()][str2.len()]
     }
 }
