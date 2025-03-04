@@ -73,3 +73,47 @@ func mergeArrays(nums1 [][]int, nums2 [][]int) [][]int {
 
 	return result
 }
+
+// https://leetcode.com/problems/partition-array-according-to-given-pivot/
+func pivotArray(nums []int, pivot int) []int {
+	result := make([]int, 0, len(nums))
+
+	for _, n := range nums {
+		if n < pivot {
+			result = append(result, n)
+		}
+	}
+
+	for _, n := range nums {
+		if n == pivot {
+			result = append(result, n)
+		}
+	}
+
+	for _, n := range nums {
+		if n > pivot {
+			result = append(result, n)
+		}
+	}
+
+	return result
+}
+
+// https://leetcode.com/problems/check-if-number-is-a-sum-of-powers-of-three/
+func checkPowerOfThree(sum, i, n int) bool {
+	if sum == n {
+		return true
+	}
+	if sum > n || i > n {
+		return false
+	}
+	return checkPowerOfThree(sum+i, i*3, n) || checkPowerOfThree(sum, i*3, n)
+}
+
+/*
+1 <= n <= 10^7
+*/
+
+func checkPowersOfThree(n int) bool {
+	return checkPowerOfThree(0, 1, n)
+}

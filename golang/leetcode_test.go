@@ -32,3 +32,35 @@ func TestMergeArraysCase2(t *testing.T) {
 		t.Fatalf("\nresult:   %v\nexpected: %v", result, expected)
 	}
 }
+
+func TestPivotArray(t *testing.T) {
+	result := pivotArray([]int{10, 16, 3, 10, 13, 3, 7, 8}, 10)
+	expected := []int{3, 3, 7, 8, 10, 10, 16, 13}
+	if !reflect.DeepEqual(result, expected) {
+		t.Fatalf("\nresult:   %v\nexpected: %v", result, expected)
+	}
+}
+
+func TestCheckPowersOfThreeCase1(t *testing.T) {
+	result := checkPowersOfThree(12)
+	expected := true
+	if result != expected {
+		t.Fatalf("\nresult:   %v\nexpected: %v", result, expected)
+	}
+}
+
+func TestCheckPowersOfThreeCase2(t *testing.T) {
+	result := checkPowersOfThree(91)
+	expected := true
+	if result != expected {
+		t.Fatalf("\nresult:   %v\nexpected: %v", result, expected)
+	}
+}
+
+func TestCheckPowersOfThreeCase3(t *testing.T) {
+	result := checkPowersOfThree(21)
+	expected := false
+	if result != expected {
+		t.Fatalf("\nresult:   %v\nexpected: %v", result, expected)
+	}
+}
