@@ -64,3 +64,269 @@ func TestCheckPowersOfThreeCase3(t *testing.T) {
 		t.Fatalf("\nresult:   %v\nexpected: %v", result, expected)
 	}
 }
+
+func TestColoredCells(t *testing.T) {
+	expected := map[int]int64{
+		1: 1,
+		2: 5,
+		3: 13,
+		4: 25,
+		5: 41,
+		6: 61,
+	}
+
+	for n, e := range expected {
+		c := coloredCells(n)
+		if c != e {
+			t.Fatalf("\nresult:   %v\nexpected: %v", c, e)
+		}
+	}
+}
+
+func TestFindMissingAndRepeatedValues(t *testing.T) {
+	result := findMissingAndRepeatedValues([][]int{{1, 3}, {2, 2}})
+	expected := []int{2, 4}
+	if !reflect.DeepEqual(result, expected) {
+		t.Fatalf("\nresult:   %v\nexpected: %v", result, expected)
+	}
+}
+
+func TestClosestPrimes(t *testing.T) {
+	result := closestPrimes(10, 20)
+	expected := []int{11, 13}
+	if !reflect.DeepEqual(result, expected) {
+		t.Fatalf("\nresult:   %v\nexpected: %v", result, expected)
+	}
+}
+
+func TestClosestPrimesNoPrimes(t *testing.T) {
+	result := closestPrimes(4, 6)
+	expected := []int{-1, -1}
+	if !reflect.DeepEqual(result, expected) {
+		t.Fatalf("\nresult:   %v\nexpected: %v", result, expected)
+	}
+}
+
+func TestClosestPrimesSmall(t *testing.T) {
+	result := closestPrimes(1, 6)
+	expected := []int{2, 3}
+	if !reflect.DeepEqual(result, expected) {
+		t.Fatalf("\nresult:   %v\nexpected: %v", result, expected)
+	}
+}
+
+func TestClosestPrimesBig(t *testing.T) {
+	result := closestPrimes(710119, 710189)
+	expected := []int{710119, 710189}
+	if !reflect.DeepEqual(result, expected) {
+		t.Fatalf("\nresult:   %v\nexpected: %v", result, expected)
+	}
+}
+
+func TestIsPrime1(t *testing.T) {
+	if isPrime(1) {
+		t.Fatalf("expected 1 is not a prime")
+	}
+}
+
+func TestIsPrime2(t *testing.T) {
+	if !isPrime(2) {
+		t.Fatalf("expected 2 is a prime")
+	}
+}
+
+func TestIsPrime3(t *testing.T) {
+	if !isPrime(3) {
+		t.Fatalf("expected 3 is a prime")
+	}
+}
+
+func TestIsPrime4(t *testing.T) {
+	if isPrime(4) {
+		t.Fatalf("expected 4 is not a prime")
+	}
+}
+
+func TestIsPrime710119(t *testing.T) {
+	if !isPrime(710119) {
+		t.Fatalf("expected 710119 is a prime")
+	}
+}
+
+func TestIsPrime710189(t *testing.T) {
+	if !isPrime(710189) {
+		t.Fatalf("expected 710189 is a prime")
+	}
+}
+
+func TestMinimumRecolors(t *testing.T) {
+	result := minimumRecolors("WBBWWBBWBW", 7)
+	expected := 3
+	if result != expected {
+		t.Fatalf("\nresult:   %v\nexpected: %v", result, expected)
+	}
+}
+
+/*
+0123456
+WBWBBBW
+
+0 w=1
+1 w=1, min=1
+2 w=2, w=1, min=1
+3 w=1, min=1
+4 w=0, min=0
+
+
+*/
+
+func TestMinimumRecolors2(t *testing.T) {
+	result := minimumRecolors("WBWBBBW", 2)
+	expected := 0
+	if result != expected {
+		t.Fatalf("\nresult:   %v\nexpected: %v", result, expected)
+	}
+}
+
+func TestNumberOfAlternatingGroups(t *testing.T) {
+	result := numberOfAlternatingGroups([]int{0, 1, 0, 1, 0}, 3)
+	expected := 3
+	if result != expected {
+		t.Fatalf("\nresult:   %v\nexpected: %v", result, expected)
+	}
+}
+
+func TestCountOfSubstrings1(t *testing.T) {
+	result := countOfSubstrings("aeioqq", 1)
+	expected := int64(0)
+	if result != expected {
+		t.Fatalf("\nresult:   %v\nexpected: %v", result, expected)
+	}
+}
+
+func TestCountOfSubstrings2(t *testing.T) {
+	result := countOfSubstrings("aeiou", 0)
+	expected := int64(1)
+	if result != expected {
+		t.Fatalf("\nresult:   %v\nexpected: %v", result, expected)
+	}
+}
+
+func TestCountOfSubstrings3(t *testing.T) {
+	result := countOfSubstrings("ieaouqqieaouqq", 1)
+	expected := int64(3)
+	if result != expected {
+		t.Fatalf("\nresult:   %v\nexpected: %v", result, expected)
+	}
+}
+
+func TestCountOfSubstrings4(t *testing.T) {
+	result := countOfSubstrings("iqeaouqi", 2)
+	expected := int64(3)
+	if result != expected {
+		t.Fatalf("\nresult:   %v\nexpected: %v", result, expected)
+	}
+}
+
+func TestCountOfSubstrings5(t *testing.T) {
+	result := countOfSubstrings("aadieuoh", 1)
+	expected := int64(2)
+	if result != expected {
+		t.Fatalf("\nresult:   %v\nexpected: %v", result, expected)
+	}
+}
+
+// aoaiuefi
+//
+// aoaiuef
+// aoaiuefi
+//
+//	oaiuef
+//	oaiuefi
+func TestCountOfSubstrings6(t *testing.T) {
+	result := countOfSubstrings("aoaiuefi", 1)
+	expected := int64(4)
+	if result != expected {
+		t.Fatalf("\nresult:   %v\nexpected: %v", result, expected)
+	}
+}
+
+func TestNumberOfSubstrings(t *testing.T) {
+	result := numberOfSubstrings("abcabc")
+	expected := 10
+	if result != expected {
+		t.Fatalf("\nresult:   %v\nexpected: %v", result, expected)
+	}
+}
+
+func TestMaximumCount(t *testing.T) {
+	result := maximumCount([]int{-1, 0, 0, 4, 5})
+	expected := 2
+	if result != expected {
+		t.Fatalf("\nresult:   %v\nexpected: %v", result, expected)
+	}
+}
+
+func TestMinZeroArray(t *testing.T) {
+	result := minZeroArray([]int{2, 0, 2}, [][]int{{0, 2, 1}, {0, 2, 1}, {1, 1, 3}})
+	expected := 2
+	if result != expected {
+		t.Fatalf("\nresult:   %v\nexpected: %v", result, expected)
+	}
+}
+
+func TestMaximumCandies(t *testing.T) {
+	result := maximumCandies([]int{5, 8, 6}, 3)
+	expected := 5
+	if result != expected {
+		t.Fatalf("\nresult:   %v\nexpected: %v", result, expected)
+	}
+}
+
+func TestMaximumCandiesMax(t *testing.T) {
+	result := maximumCandies([]int{11, 11, 11}, 3)
+	expected := 11
+	if result != expected {
+		t.Fatalf("\nresult:   %v\nexpected: %v", result, expected)
+	}
+}
+
+func TestMaximumCandiesNot(t *testing.T) {
+	result := maximumCandies([]int{2, 5}, 11)
+	expected := 0
+	if result != expected {
+		t.Fatalf("\nresult:   %v\nexpected: %v", result, expected)
+	}
+}
+
+func TestIsFeasible(t *testing.T) {
+	result := isFeasible([]int{2, 3, 5, 9}, 2, 5)
+	expected := true
+	if result != expected {
+		t.Fatalf("\nresult:   %v\nexpected: %v", result, expected)
+	}
+}
+
+func TestIsFeasibleNo(t *testing.T) {
+	result := isFeasible([]int{2, 3, 5, 9}, 2, 3)
+	expected := false
+	if result != expected {
+		t.Fatalf("\nresult:   %v\nexpected: %v", result, expected)
+	}
+}
+
+func TestItCanBeRepairedIn(t *testing.T) {
+	result := areReparableIn([]int{4, 2, 3, 1}, 10, 7)
+	expected := false
+	if result != expected {
+		t.Fatalf("\nresult:   %v\nexpected: %v", result, expected)
+	}
+}
+
+func TestRepairCars(t *testing.T) {
+	result := repairCars([]int{4, 2, 3, 1}, 10)
+	expected := int64(16)
+	if result != expected {
+		t.Fatalf("\nresult:   %v\nexpected: %v", result, expected)
+	}
+}
