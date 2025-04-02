@@ -330,3 +330,115 @@ func TestRepairCars(t *testing.T) {
 		t.Fatalf("\nresult:   %v\nexpected: %v", result, expected)
 	}
 }
+
+func TestCountCompleteComponents(t *testing.T) {
+	result := countCompleteComponents(3, [][]int{
+		{0, 1}, {1, 2}, {2, 0},
+	})
+	expected := 1
+	if result != expected {
+		t.Fatalf("\nresult:   %v\nexpected: %v", result, expected)
+	}
+}
+
+func TestCountPaths(t *testing.T) {
+	result := countPaths(3, [][]int{
+		{0, 1, 1}, {1, 2, 1}, {2, 0, 1},
+	})
+	expected := 1
+	if result != expected {
+		t.Fatalf("\nresult:   %v\nexpected: %v", result, expected)
+	}
+}
+
+func TestCountDays(t *testing.T) {
+	result := countDays(10, [][]int{{5, 7}, {1, 3}, {9, 10}})
+	expected := 2
+	if result != expected {
+		t.Fatalf("\nresult:   %v\nexpected: %v", result, expected)
+	}
+}
+
+func TestCheckValidLineCuts(t *testing.T) {
+	result := checkValidLineCuts([][]int{{0, 1}, {1, 2}, {2, 3}, {3, 4}})
+	expected := true
+	if result != expected {
+		t.Fatalf("\nresult:   %v\nexpected: %v", result, expected)
+	}
+}
+
+func TestCheckValidCuts(t *testing.T) {
+	result := checkValidCuts(5, [][]int{{1, 0, 5, 2}, {0, 2, 2, 4}, {3, 2, 5, 3}, {0, 4, 4, 5}})
+	expected := true
+	if result != expected {
+		t.Fatalf("\nresult:   %v\nexpected: %v", result, expected)
+	}
+}
+
+func TestCheckValidCuts2(t *testing.T) {
+	result := checkValidCuts(5, [][]int{{0, 0, 1, 3}, {1, 0, 2, 3}, {2, 0, 3, 3}})
+	expected := true
+	if result != expected {
+		t.Fatalf("\nresult:   %v\nexpected: %v", result, expected)
+	}
+}
+
+func TestCheckValidCutsNegative(t *testing.T) {
+	// [[0,2,2,4],[1,0,3,2],[2,2,3,4],[3,0,4,2],[3,2,4,4]]
+	result := checkValidCuts(5, [][]int{{0, 2, 2, 4}, {1, 0, 3, 2}, {2, 2, 3, 4}, {3, 0, 4, 2}, {3, 2, 4, 4}})
+	expected := false
+	if result != expected {
+		t.Fatalf("\nresult:   %v\nexpected: %v", result, expected)
+	}
+}
+
+func TestMinOperations(t *testing.T) {
+	result := minOperations([][]int{{529, 529, 989}, {989, 529, 345}, {989, 805, 69}}, 92)
+	expected := 1
+	if result != expected {
+		t.Fatalf("\nresult:   %v\nexpected: %v", result, expected)
+	}
+}
+
+func TestMinimumIndex(t *testing.T) {
+	result := minimumIndex([]int{1, 2, 1})
+	expected := -1
+	if result != expected {
+		t.Fatalf("\nresult:   %v\nexpected: %v", result, expected)
+	}
+}
+
+func TestMaxPoints(t *testing.T) {
+	result := maxPoints([][]int{{1, 2, 3}, {2, 5, 7}, {3, 5, 1}}, []int{5, 6, 2})
+	expected := []int{5, 8, 1}
+	if !reflect.DeepEqual(result, expected) {
+		t.Fatalf("\nresult:   %v\nexpected: %v", result, expected)
+	}
+
+}
+
+func TestPrimeScore(t *testing.T) {
+	result := primeScore(6)
+	expected := 2
+	if result != expected {
+		t.Fatalf("\nresult:   %v\nexpected: %v", result, expected)
+	}
+}
+
+func TestMaximumScore(t *testing.T) {
+	// [12,5,1,6,9,1,17,14]
+	result := maximumScore([]int{12, 5, 1, 6, 9, 1, 17, 14}, 12)
+	expected := 62996359
+	if result != expected {
+		t.Fatalf("\nresult:   %v\nexpected: %v", result, expected)
+	}
+}
+
+func TestMaximumScore1(t *testing.T) {
+	// [12,5,1,6,9,1,17,14]
+	result := maximumScore([]int{12, 5, 1, 6, 9, 1, 17, 14}, 12)
+	expected := 62996359
+	if result != expected {
+		t.Fatalf("\nresult:   %v\nexpected: %v", result, expected)
+	}
+}

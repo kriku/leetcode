@@ -1,8 +1,11 @@
 package leetcode
 
 import (
+	"container/heap"
+	"maps"
 	"math"
 	"slices"
+	"sort"
 )
 
 // https://leetcode.com/problems/apply-operations-to-an-array/
@@ -726,4 +729,757 @@ func repairCars(ranks []int, cars int) int64 {
 	} else {
 		return right
 	}
+}
+
+// https://leetcode.com/problems/divide-array-into-equal-pairs/
+func divideArray(nums []int) bool {
+	pairs := make([]bool, 501)
+
+	for _, n := range nums {
+		pairs[n] = !pairs[n]
+	}
+
+	canBeDivided := true
+
+	for _, p := range pairs {
+		canBeDivided = canBeDivided && !p
+	}
+
+	return canBeDivided
+}
+
+// https://leetcode.com/problems/longest-nice-subarray/
+/*
+
+1 - 1        // we need to "pop" this from xor and from bitwise and
+2 - 10
+4 - 100    // bitwise xor is 111
+1 - 1      // bitwise and is 1, bitwise xor is 110
+8 - 1000
+
+another case
+
+1 - 1        // we need to "pop" this from xor and from bitwise and
+2 - 10       // and also pop this one
+4 - 100    // bitwise xor is 111
+3 - 11     // bitwise and is 11, bitwise xor is 100
+8 - 1000
+
+                &       ^
+1  - 1          1       1
+3  - 11         1       10
+8  - 100
+48 - 110000
+10 - 1010
+
+here we should use definitely sliding window approach
+
+ [1, 2, 4, 1, 8]
+^ starting from 0
+
+then starting to move either left or right boundary
+
+we can extend right boundary as far as we have next number bitwise and with whole xor equals 0
+ [1, 2, 4, 1, 8]
+  ^ xor is 0, 1 & 0 == 0 - we already have right boundary on 0
+     ^ xor is 1, and is 0, 1 & 10 == 0 - we can extend right boundary +1
+        ^ xor is 11, and is 0, ...
+           ^ xor is 111, and is 0, 1 & 111 == 1 - we cannot extend right boundary any more right should stay at 3
+  ^ xor is 110, and is 1 -
+*/
+func longestNiceSubarray(nums []int) int {
+	left, right, result := 0, 0, 0
+	xor := 0
+
+	for right < len(nums) && left < len(nums) {
+		if xor&nums[right] == 0 {
+			xor ^= nums[right]
+			right++
+		} else {
+			xor ^= nums[left]
+			left++
+		}
+
+		result = max(result, right-left)
+	}
+
+	return result
+}
+
+// https://leetcode.com/problems/minimum-cost-walk-in-weighted-graph/
+func minimumCost(n int, edges [][]int, query [][]int) []int {
+	adjacencyList := make([][][]int, n)
+	for _, e := range edges {
+		from, to, weight := e[0], e[1], e[2]
+		adjacencyList[from] = append(adjacencyList[from], []int{to, weight})
+		adjacencyList[to] = append(adjacencyList[to], []int{from, weight})
+	}
+
+	visited := make([]bool, n)
+	components := make([]int, n)
+	componentId := 0
+	costs := make([]int, n)
+
+	for i := range n {
+		costs[i] = math.MaxInt32
+	}
+
+	// bfs
+	for i := range n {
+		if visited[i] {
+			continue
+		}
+
+		toVisit := []int{i}
+
+		for len(toVisit) > 0 {
+			current := toVisit[0]
+			toVisit = toVisit[1:]
+
+			visited[current] = true
+			components[current] = componentId
+
+			for _, edge := range adjacencyList[current] {
+				to, weight := edge[0], edge[1]
+				if !visited[to] {
+					toVisit = append(toVisit, to)
+				}
+				costs[componentId] &= weight
+			}
+		}
+
+		componentId++
+	}
+
+	result := make([]int, len(query))
+	for i, q := range query {
+		from, to := q[0], q[1]
+		if components[from] != components[to] {
+			result[i] = -1
+		} else {
+			result[i] = costs[components[from]]
+		}
+	}
+
+	return result
+}
+
+// https://leetcode.com/problems/find-all-possible-recipes-from-given-supplies/
+func findAllRecipes(recipes []string, ingredients [][]string, supplies []string) []string {
+	hasNewSupplies := true
+	suppliesSet := make(map[string]bool)
+	visitedRecipes := make(map[string]bool)
+	doneRecipes := make([]string, 0)
+
+	for _, s := range supplies {
+		suppliesSet[s] = true
+	}
+
+	for hasNewSupplies {
+		hasNewSupplies = false
+
+		// bfs
+		for i, r := range recipes {
+			if visitedRecipes[r] {
+				continue
+			}
+
+			isPossible := true
+
+			for _, ingredient := range ingredients[i] {
+				isPossible = isPossible && suppliesSet[ingredient]
+			}
+
+			if isPossible {
+				visitedRecipes[r] = true
+				hasNewSupplies = true
+				doneRecipes = append(doneRecipes, r)
+				suppliesSet[r] = true
+			}
+		}
+	}
+
+	return doneRecipes
+}
+
+// https://leetcode.com/problems/count-the-number-of-complete-components/
+/*
+
+connected component vertex and edges counts:
+
+v - e
+1 - 0
+2 - 1
+3 - 3
+4 - 6
+5 - 10
+6 - 16
+7 - 23
+
+e(v) = e(v-1) + (v-1) - seems right
+
+but can we express not recursively? I think we can
+
+e(1) = e(0) + 0
+e(2) = e(1) + 1 = e(0) + 0 + 1
+e(3) = e(2) + 2 = e(1) + 1 + 2 = e(0) + 0 + 1 + 2
+e(3) = e(3) + 3 = e(2) + 2 + 3 = e(1) + 1 + 2 + 3 = e(0) + 0 + 1 + 2 + 3
+
+this is arithmetic sequence with sum n(n-1)/2
+
+...
+
+*/
+func countCompleteComponents(n int, edges [][]int) int {
+	completed := 0
+
+	graph := make(map[int][]int)
+
+	for _, e := range edges {
+		from, to := e[0], e[1]
+		graph[from] = append(graph[from], to)
+		graph[to] = append(graph[to], from)
+	}
+
+	visited := make(map[int]bool)
+
+	for v := range graph {
+		if visited[v] {
+			continue
+		}
+
+		connected := 0
+		connectedEdges := 0
+
+		toVisit := []int{v}
+
+		for len(toVisit) > 0 {
+			current := toVisit[0]
+			toVisit = toVisit[1:]
+			visited[current] = true
+			connected++
+			connectedEdges += len(graph[current])
+
+			for _, to := range graph[current] {
+				if visited[to] {
+					continue
+				}
+
+				toVisit = append(toVisit, to)
+				visited[to] = true
+			}
+		}
+
+		if connected*(connected-1) == connectedEdges {
+			completed++
+		}
+	}
+
+	return completed
+}
+
+// https://leetcode.com/problems/number-of-ways-to-arrive-at-destination/
+type N struct {
+	value     int
+	distance  int64
+	neighbors []int
+	distances []int
+	// index in priority queue
+	index int
+}
+
+// A PriorityQueue implements heap.Interface and holds Items.
+type PQ []*N
+
+func (pq PQ) Len() int { return len(pq) }
+
+func (pq PQ) Less(i, j int) bool {
+	return pq[i].distance < pq[j].distance
+}
+
+func (pq PQ) Swap(i, j int) {
+	pq[i], pq[j] = pq[j], pq[i]
+	pq[i].index = i
+	pq[j].index = j
+}
+
+func (pq *PQ) Push(x any) {
+	n := len(*pq)
+	item := x.(*N)
+	item.index = n
+	*pq = append(*pq, item)
+}
+
+func (pq *PQ) Pop() any {
+	old := *pq
+	n := len(old)
+	item := old[n-1]
+	old[n-1] = nil  // don't stop the GC from reclaiming the item eventually
+	item.index = -1 // for safety
+	*pq = old[0 : n-1]
+	return item
+}
+
+// update modifies the priority and value of an Item in the queue.
+func (pq *PQ) update(item *N, distance int64) {
+	item.distance = distance
+	heap.Fix(pq, item.index)
+}
+
+func countPaths(n int, roads [][]int) int {
+	graph := make([]*N, n)
+
+	for i := range n {
+		graph[i] = &N{
+			value:     i,
+			distance:  math.MaxInt64,
+			neighbors: make([]int, 0),
+			index:     i,
+		}
+	}
+
+	// build graph adjacency list
+	for _, e := range roads {
+		from, to, distance := e[0], e[1], e[2]
+		graph[from].neighbors = append(graph[from].neighbors, to)
+		graph[to].neighbors = append(graph[to].neighbors, from)
+		graph[from].distances = append(graph[from].distances, distance)
+		graph[to].distances = append(graph[to].distances, distance)
+	}
+
+	pq := make(PQ, n)
+	graph[0].distance = 0
+	for i := range n {
+		pq[i] = graph[i]
+	}
+
+	heap.Init(&pq)
+
+	ways := make([]int, n)
+	ways[0] = 1
+	current := 0
+
+	for pq.Len() > 0 {
+		node := heap.Pop(&pq).(*N)
+		current = node.value
+
+		for i, neighbor := range node.neighbors {
+			distance := node.distance + int64(node.distances[i])
+
+			if graph[neighbor].distance > distance {
+				pq.update(graph[neighbor], distance)
+				ways[neighbor] = ways[current]
+			} else if graph[neighbor].distance == distance {
+				ways[neighbor] = (ways[neighbor] + ways[current]) % 1000000007
+			}
+		}
+	}
+
+	return ways[n-1]
+}
+
+// we can use difference map to solve this
+func countDays(days int, meetings [][]int) int {
+	difference := make(map[int]int)
+	previous := days
+
+	for _, m := range meetings {
+		previous = min(previous, m[0])
+		difference[m[0]]++
+		difference[m[1]+1]--
+	}
+
+	current := 0
+	free := previous - 1
+	dates := slices.Sorted(maps.Keys(difference))
+
+	for _, date := range dates {
+		if current == 0 {
+			free += date - previous
+		}
+		current += difference[date]
+		previous = date
+	}
+
+	free += days - previous + 1
+
+	return free
+}
+
+// https://leetcode.com/problems/check-if-grid-can-be-cut-into-sections/
+
+type Segments [][]int
+
+func (s Segments) Len() int           { return len(s) }
+func (s Segments) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
+func (s Segments) Less(i, j int) bool { return s[i][0] < s[j][0] }
+
+func checkValidLineCuts(s Segments) bool {
+	sort.Sort(s)
+
+	end := 0
+	cuts := -1
+
+	for _, x := range s {
+		if end <= x[0] {
+			cuts++
+		}
+		end = max(end, x[1])
+
+		if cuts >= 2 {
+			return true
+		}
+	}
+	return false
+}
+
+func checkValidCuts(n int, rectangles [][]int) bool {
+	xSegments := make(Segments, len(rectangles))
+	ySegments := make(Segments, len(rectangles))
+
+	for i, r := range rectangles {
+		xSegments[i] = []int{r[0], r[2]}
+		ySegments[i] = []int{r[1], r[3]}
+	}
+
+	return checkValidLineCuts(xSegments) || checkValidLineCuts(ySegments)
+}
+
+// https://leetcode.com/problems/minimum-operations-to-make-a-uni-value-grid/
+func minOperations(grid [][]int, x int) int {
+	flatten := make([]int, 0)
+	for _, row := range grid {
+		flatten = append(flatten, row...)
+	}
+
+	sort.Ints(flatten)
+
+	to := flatten[len(flatten)/2]
+
+	count := 0
+
+	for _, v := range flatten {
+		diff := v - to
+		if diff < 0 {
+			diff = -diff
+		}
+		if diff%x != 0 {
+			return -1
+		}
+		count += diff / x
+	}
+
+	return count
+}
+
+// https://leetcode.com/problems/minimum-index-of-a-valid-split/
+func minimumIndex(nums []int) int {
+	frequency := make(map[int]int)
+	fs := make([][]int, len(nums))
+	f := 0
+	d := 0
+
+	for i, n := range nums {
+		frequency[n]++
+		if f < frequency[n] && frequency[n]*2 > i+1 {
+			f = frequency[n]
+			d = n
+		} else {
+			if f*2 <= i+1 {
+				f = 0
+				d = 0
+			}
+		}
+		fs[i] = []int{d, f}
+	}
+
+	for i, fx := range fs[:len(fs)-1] {
+		if fx[0] == d && (f-fx[1])*2 > len(nums)-i-1 {
+			return i
+		}
+	}
+
+	return -1
+}
+
+// https://leetcode.com/problems/maximum-number-of-points-from-grid-queries/
+type Node struct {
+	value, i, j int
+}
+
+type PriorityQueue []*Node
+
+func (pq PriorityQueue) Len() int { return len(pq) }
+
+func (pq PriorityQueue) Less(i, j int) bool {
+	return pq[i].value < pq[j].value
+}
+
+func (pq PriorityQueue) Swap(i, j int) {
+	pq[i], pq[j] = pq[j], pq[i]
+}
+
+func (pq *PriorityQueue) Push(x any) {
+	item := x.(*Node)
+	*pq = append(*pq, item)
+}
+
+func (pq *PriorityQueue) Pop() any {
+	old := *pq
+	n := len(old)
+	item := old[n-1]
+	old[n-1] = nil // don't stop the GC from reclaiming the item eventually
+	*pq = old[0 : n-1]
+	return item
+}
+
+type Query struct {
+	index, value int
+}
+
+type Queries []*Query
+
+func (s Queries) Len() int           { return len(s) }
+func (s Queries) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
+func (s Queries) Less(i, j int) bool { return s[i].value < s[j].value }
+
+func maxPoints(grid [][]int, queries []int) []int {
+	queriesList := make(Queries, len(queries))
+	queriesResults := make([]int, len(queries))
+
+	for i, q := range queries {
+		queriesList[i] = &Query{index: i, value: q}
+	}
+
+	sort.Sort(queriesList)
+
+	isInQueue := make([][]bool, len(grid))
+	for i := range isInQueue {
+		isInQueue[i] = make([]bool, len(grid[0]))
+	}
+	toVisit := make(PriorityQueue, 0)
+	toVisit.Push(&Node{grid[0][0], 0, 0})
+	isInQueue[0][0] = true
+
+	cellsVisited := 0
+	for _, q := range queriesList {
+
+		for len(toVisit) > 0 && toVisit[0].value < q.value {
+			cellsVisited++
+
+			node := heap.Pop(&toVisit).(*Node)
+
+			if node.i+1 < len(grid) && !isInQueue[node.i+1][node.j] {
+				isInQueue[node.i+1][node.j] = true
+				heap.Push(&toVisit, &Node{grid[node.i+1][node.j], node.i + 1, node.j})
+			}
+			if node.j+1 < len(grid[0]) && !isInQueue[node.i][node.j+1] {
+				isInQueue[node.i][node.j+1] = true
+				heap.Push(&toVisit, &Node{grid[node.i][node.j+1], node.i, node.j + 1})
+			}
+			if node.i-1 >= 0 && !isInQueue[node.i-1][node.j] {
+				isInQueue[node.i-1][node.j] = true
+				heap.Push(&toVisit, &Node{grid[node.i-1][node.j], node.i - 1, node.j})
+			}
+			if node.j-1 >= 0 && !isInQueue[node.i][node.j-1] {
+				isInQueue[node.i][node.j-1] = true
+				heap.Push(&toVisit, &Node{grid[node.i][node.j-1], node.i, node.j - 1})
+			}
+		}
+
+		queriesResults[q.index] = cellsVisited
+	}
+
+	return queriesResults
+}
+
+// https://leetcode.com/problems/apply-operations-to-maximize-score/
+type Pair struct {
+	index, value int
+}
+
+const MOD = 1_000_000_007
+
+// An IntHeap is a max-heap of ints.
+type IntHeap []*Pair
+
+func (h IntHeap) Len() int           { return len(h) }
+func (h IntHeap) Less(i, j int) bool { return h[i].value > h[j].value }
+func (h IntHeap) Swap(i, j int)      { h[i], h[j] = h[j], h[i] }
+
+func (h *IntHeap) Push(x any) {
+	// Push and Pop use pointer receivers because they modify the slice's length,
+	// not just its contents.
+	*h = append(*h, x.(*Pair))
+}
+
+func (h *IntHeap) Pop() any {
+	old := *h
+	n := len(old)
+	x := old[n-1]
+	*h = old[0 : n-1]
+	return x
+}
+
+func primeScore(n int) int {
+	p := 0
+	for i := 2; i <= int(math.Sqrt(float64(n))); i++ {
+		if n%i == 0 {
+			p++
+			for n%i == 0 {
+				n = n / i
+			}
+		}
+	}
+
+	if n >= 2 {
+		p++
+	}
+
+	return p
+}
+
+/*
+nums = []int{60, 15, 420, 2, 40}
+scores = []int{3, 2, 4, 1, 2}
+right = []int{5, 5, 5, 5, 5}
+left = []int{-1, 0, -1, -1, -1}
+
+let's build associated arrays
+of nearest elements with bigger prime score
+to the right and left of current element
+
+to do so we will use monotonic stack
+
+we start with arrays initialized to boundaries of the array, -1 and len(nums)
+right = []int{5, 5, 5, 5, 5}
+left = []int{-1, -1, -1, -1, -1}
+
+then for each element of prime scores array we create pair of its index and value
+and push it to the monotonic stack
+we will pop elements from the stack, if current element is greater than the last element in the stack
+
+// 0
+ms = []*Pair{Pair{3, 0}}
+
+// 1
+ms = []*Pair{Pair{3, 0}, Pair{2, 1}}
+// at this point we know, that element at index 1
+// has prime score lower than element at index 0,
+// so we can put index 0, to the "left" array at index 1
+
+// if scores at index 1 will be equals to element at index 0
+// e.g. scores = []int{3, 3, 2, 4, 2}
+// 0 - Pair{3, 0}
+ms = []*Pair{Pair{3, 0}}
+right = []int{5, 5, 5, 5, 5}
+left = []int{-1, -1, -1, -1, -1}
+// 1 - Pair{3, 1}
+ms = []*Pair{Pair{3, 0}, Pair{3, 1}}
+right = []int{5, 5, 5, 5, 5}
+left = []int{-1, 0, -1, -1, -1}
+// 2 - Pair{2, 2}
+ms = []*Pair{Pair{3, 0}, Pair{3, 1}, Pair{2, 2}}
+right = []int{5, 5, 5, 5, 5}
+left = []int{-1, 0, 1, -1, -1}
+// 3 - Pair{4, 3}
+ms = []*Pair{Pair{4, 3}}
+Pair{2, 2}
+Pair{3, 1}
+Pair{3, 0}
+right = []int{3, 3, 3, 5, 5}
+left = []int{-1, 0, 1, -1, -1}
+// 4 - Pair{2, 4}
+ms = []*Pair{Pair{4, 3}, Pair{2, 4}}
+right = []int{3, 3, 3, 5, 5}
+left = []int{-1, 0, 1, -1, 3}
+
+// in that case we will put index 0 to the "left" array at index 1
+// but also we should pop index 0 from the monotonic stack
+// and push Pair {3, 1} as new first biggest prime score to the "left"
+
+// 2 etc...
+*/
+func maximumScore(nums []int, k int) int {
+	scores := make([]int, len(nums))
+	ms := make([]*Pair, 0)
+	h := make(IntHeap, 0)
+	heap.Init(&h)
+
+	for i, n := range nums {
+		scores[i] = primeScore(n)
+		heap.Push(&h, &Pair{i, n})
+	}
+
+	left := make([]int, len(nums))
+	right := make([]int, len(nums))
+	for i := range left {
+		left[i] = -1
+		right[i] = len(nums)
+	}
+
+	for i, n := range scores {
+		for len(ms) > 0 && n > ms[len(ms)-1].value {
+			right[ms[len(ms)-1].index] = i
+			ms = ms[:len(ms)-1]
+		}
+
+		if len(ms) > 0 {
+			left[i] = ms[len(ms)-1].index
+		}
+
+		ms = append(ms, &Pair{i, n})
+	}
+
+	arrays := make([]int64, len(nums))
+
+	for i := range nums {
+		arrays[i] = int64((i - left[i]) * (right[i] - i))
+	}
+
+	sum := uint64(1)
+
+	for k > 0 && len(h) > 0 {
+		n := heap.Pop(&h).(*Pair)
+		applied := min(int64(k), arrays[n.index])
+		k -= int(applied)
+
+		sum = (sum * power(uint64(n.value), int(applied))) % MOD
+	}
+
+	return int(sum)
+}
+
+func power(base uint64, exponent int) uint64 {
+	result := uint64(1)
+
+	for exponent > 0 {
+		if exponent%2 == 1 {
+			result = (result * base) % MOD
+		}
+
+		base = (base * base) % MOD
+
+		exponent = exponent / 2
+	}
+
+	return result
+}
+
+// https://leetcode.com/problems/put-marbles-in-bags/
+func putMarbles(weights []int, k int) int64 {
+	n := len(weights)
+	pairs := make([]int, n-1)
+	for i := 0; i < n-1; i++ {
+		pairs[i] = weights[i] + weights[i+1]
+	}
+	sort.Ints(pairs)
+	diff := int64(0)
+
+	// radius := min(k-1, n/2)
+	for i := 0; i < k-1; i++ {
+		diff += int64(pairs[n-i-1] - pairs[i])
+	}
+
+	return diff
 }
