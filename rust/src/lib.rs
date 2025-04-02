@@ -2498,3 +2498,86 @@ impl Solution {
         lcs[str1.len()][str2.len()]
     }
 }
+
+/**
+ * https://leetcode.com/problems/divide-array-into-equal-pairs/
+ */
+impl Solution {
+    pub fn divide_array(nums: Vec<i32>) -> bool {
+        nums.iter()
+            .fold(HashSet::new(), |mut acc, &n| {
+                if !acc.remove(&n) {
+                    acc.insert(n);
+                }
+                acc
+            })
+            .is_empty()
+    }
+}
+
+#[cfg(test)]
+mod divide_array {
+    use super::*;
+
+    #[test]
+    fn case_0() {
+        let result = Solution::divide_array(vec![3, 2, 3, 2, 2, 2]);
+        assert_eq!(result, true);
+    }
+
+    #[test]
+    fn case_1() {
+        let result = Solution::divide_array(vec![3, 2, 3, 2, 2, 1]);
+        assert_eq!(result, false);
+    }
+}
+
+/**
+ * https://leetcode.com/problems/solving-questions-with-brainpower/
+ */
+impl Solution {
+    pub fn most_points(questions: Vec<Vec<i32>>) -> i64 {
+        let mut max = vec![0i64; questions.len() + 1];
+
+        for i in (0..questions.len()).rev() {
+            let (points, brainpower) = (questions[i][0], questions[i][1]);
+            let brainpower = brainpower as usize;
+            let points = points as i64;
+
+            let if_solve_current;
+
+            if questions.get(i + brainpower + 1).is_some() {
+                if_solve_current = points + max[i + brainpower + 1];
+            } else {
+                if_solve_current = points;
+            }
+
+            max[i] = if_solve_current.max(max[i + 1]);
+        }
+
+        return max[0];
+    }
+}
+
+#[cfg(test)]
+mod most_points {
+    use super::*;
+
+    #[test]
+    fn case_1() {
+        let result = Solution::most_points(vec![vec![3, 2], vec![4, 3], vec![4, 4], vec![2, 5]]);
+        assert_eq!(result, 5);
+    }
+
+    #[test]
+    fn case_2() {
+        let result = Solution::most_points(vec![
+            vec![1, 1],
+            vec![2, 2],
+            vec![3, 3],
+            vec![4, 4],
+            vec![5, 5],
+        ]);
+        assert_eq!(result, 7);
+    }
+}
